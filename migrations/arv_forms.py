@@ -145,17 +145,17 @@ def buildMergedSchema(Session, BBLSession):
         name='adverse_event_grade',
         title='Adverse Reaction Grade',
         description="",
-        type='string',
+        type='integer',
         order=order,
         is_collection=False,
         is_required=False,
         )
-    for i, (grade, title) in enumerate([('mild', 'Mild'),('moderate','Moderate'), ('severe','Severe'), ('life threatening',  'Life Threatening')]):
+    for i, (grade, title) in enumerate([(1, '1 - Mild'),(2,'2 - Moderate'), (3,'3 - Severe'), (4,  '4 - Life Threatening')]):
         newChoice = model.Choice(
-            name = grade,
+            name = str(grade),
             title = unicode(title),
             order = i,
-            value = unicode(grade)
+            value = grade
             )
         adverse_event_grade.choices.append(newChoice)
     order += 1
@@ -380,13 +380,13 @@ select
      END as adverse_event
      ,CASE
     WHEN e.eharvtg = 1
-    then 'mild'
+    then 1
     when e.eharvtg = 2
-    then 'moderate'
+    then 2
     WHEN e.eharvtg = 3
-    then 'severe'
+    then 3
     when e.eharvtg = 4
-    then 'life threatening'
+    then 4
     end as adverse_event_grade
 from aeh_eharv01 e
 join aeh_roster r on r.rid = e.rid
@@ -492,13 +492,13 @@ select
      END as adverse_event
      ,CASE
     WHEN e.eharvtg = 1
-    then 'mild'
+    then 1
     when e.eharvtg = 2
-    then 'moderate'
+    then 2
     WHEN e.eharvtg = 3
-    then 'severe'
+    then 3
     when e.eharvtg = 4
-    then 'life threatening'
+    then 4
     end as adverse_event_grade
 from aehpart_eharv01 e
 join aehpart_roster r on r.rid = e.rid
