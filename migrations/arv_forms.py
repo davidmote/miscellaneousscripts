@@ -56,7 +56,7 @@ def buildMergedSchema(Session, BBLSession):
         schema=newSchema,
         name='drug',
         title='Drug',
-        description="",
+        description="Please select the medication from the list.",
         type='string',
         order=order,
         is_collection=False,
@@ -72,11 +72,33 @@ def buildMergedSchema(Session, BBLSession):
             )
         drug.choices.append(newChoice)
     order += 1
+
+    start_reason = model.Attribute(
+        schema=newSchema,
+        name='start_reason',
+        title='Prescription Reason',
+        description="What is the reason for this medication?",
+        type='string',
+        order=order,
+        is_collection=False,
+        is_required=False,
+        )
+
+    for i, (name, title, value) in enumerate([('treatment', 'Treatment', 'treatment'),('pep', 'Post Exposure Prophylaxis', 'pep'),('prep', 'Pre Exposure Prophylaxis', 'prep')]):
+        newChoice = model.Choice(
+            name = name,
+            title = unicode(title),
+            order = i,
+            value = unicode(value)
+            )
+        start_reason.choices.append(newChoice)
+    order += 1
+
     start_date = model.Attribute(
         schema=newSchema,
         name='start_date',
         title='Start Date',
-        description="Date the medication began",
+        description="Date the patient began taking this medication.",
         type='date',
         order=order,
         is_collection=False,
@@ -88,7 +110,7 @@ def buildMergedSchema(Session, BBLSession):
         schema=newSchema,
         name='stop_date',
         title='Start Date',
-        description="Date the medication stopped",
+        description="Date the patient stopped taking this medication.",
         type='date',
         order=order,
         is_collection=False,
@@ -96,32 +118,11 @@ def buildMergedSchema(Session, BBLSession):
         )
     order += 1
 
-    start_reason = model.Attribute(
-        schema=newSchema,
-        name='start_reason',
-        title='Prescription Reason',
-        description="",
-        type='string',
-        order=order,
-        is_collection=False,
-        is_required=False,
-        )
-
-    for i, (name, title, value) in enumerate([('pep', 'Post Exposure Prophylaxis', 'pep'),('prep', 'Pre Exposure Prophylaxis', 'prep')]):
-        newChoice = model.Choice(
-            name = name,
-            title = unicode(title),
-            order = i,
-            value = unicode(value)
-            )
-        start_reason.choices.append(newChoice)
-    order += 1
-
     adverse_event = model.Attribute(
         schema=newSchema,
-        name='adverse_event',
-        title='Adverse Reaction',
-        description="",
+        name='stop_reason',
+        title='Reason for stopping the medication',
+        description="Please select the reason the medication was ended from the list (e.g. Adverse event)",
         type='string',
         order=order,
         is_collection=False,
@@ -144,7 +145,7 @@ def buildMergedSchema(Session, BBLSession):
         schema=newSchema,
         name='adverse_event_grade',
         title='Adverse Reaction Grade',
-        description="",
+        description="If the reaction was severe or life threatening, please indicate.",
         type='integer',
         order=order,
         is_collection=False,
@@ -192,7 +193,10 @@ def fillModern(Session, medSchema):
                 kwargs['start_reason'] = "pep"
             elif kwargs['notes'].lower().find("post exposure prophylaxis") >= 0:
                 kwargs['start_reason'] = "pep"
-
+            else:
+                kwargs['start_reason'] = "treatment"
+        else:
+            kwargs['start_reason'] = "treatment"
         collect_date = use.create_date.date()
         visits = (
             Session.query(model.Visit)
@@ -377,7 +381,15 @@ select
      when e.ehpsm > 11
      then l.eharv1t
      else NULL
-     END as adverse_event
+     END as stop_reason
+    ,CASE
+     WHEN e.arvtxstat in (3,4)
+     THEN 'treatment'
+     WHEN e.arvtxstat = 1
+     THEN 'prep'
+     WHEN e.arvtxstat = 2
+     THEN 'pep'
+     END as start_reason
      ,CASE
     WHEN e.eharvtg = 1
     then 1
@@ -489,7 +501,15 @@ select
      when e.ehpsm > 11
      then l.eharv1t
      else NULL
-     END as adverse_event
+     END as stop_reason
+     ,CASE
+     WHEN e.arvtxstat in (3,4)
+     THEN 'treatment'
+     WHEN e.arvtxstat = 1
+     THEN 'prep'
+     WHEN e.arvtxstat = 2
+     THEN 'pep'
+     END as start_reason
      ,CASE
     WHEN e.eharvtg = 1
     then 1
@@ -517,8 +537,8 @@ select * from AEHPART
 )
 
 select * from all_drugs
-group by aeh_number, visit_date, start_date, stop_date, drug, adverse_event, adverse_event_grade
-order by aeh_number, visit_date
+group by aeh_number, visit_date, start_date, stop_date, drug, start_reason, stop_reason, adverse_event_grade
+order by aeh_number, visit_date;
     """)
     keys = [
     'aeh_number',
@@ -526,7 +546,8 @@ order by aeh_number, visit_date
     'drug',
     'start_date',
     'stop_date',
-    'adverse_event',
+    'stop_reason',
+    'start_reason'
     'adverse_event_grade']
     for entry in results:
         yield dict(zip(keys, entry))

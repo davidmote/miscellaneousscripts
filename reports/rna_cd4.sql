@@ -3,7 +3,7 @@ Sql query to build a custom report, by patient and collect date, that displays
 Viral load, CD4/CD8 data, ARV data, and aliquot in the system.
 */
 with viral_load as (
-    select p.id as pid, p.our as our, e.collect_date, sq.value as quantifier_code, dr.value as result, st.value as test_kit_type
+    select p.id as pid, p.our as our, p.legacy_number as aeh_number, e.collect_date, sq.value as quantifier_code, dr.value as result, st.value as test_kit_type
     from entity as e
     join schema as s on e.schema_id = s.id
     join decimal as dr on e.id = dr.entity_id and dr.attribute_id in (
@@ -33,7 +33,7 @@ with viral_load as (
 ),
 
 lymph as (
-    select p.id as pid, p.our as our, e.collect_date, d4p.value as cd4_percent, d4a.value as cd4_absolute, d8p.value as cd8_percent, d8a.value as cd8_absolute, r.value as ratio
+    select p.id as pid, p.our as our, p.legacy_number as aeh_number, e.collect_date, d4p.value as cd4_percent, d4a.value as cd4_absolute, d8p.value as cd8_percent, d8a.value as cd8_absolute, r.value as ratio
     from entity as e
     join schema as s on e.schema_id = s.id
     join decimal as d4p on e.id = d4p.entity_id and d4p.attribute_id in (
@@ -79,152 +79,153 @@ lymph as (
 drugs as (
     select p.id as pid
     ,p.our as our
+    ,p.legacy_number as aeh_number
     ,cast(dstart.value as date) as start_date
     , MAX(cast(dstop.value as date)) as stop_date
     ,CASE
-	WHEN
-	 dcode.value = '08180006'
-	THEN 'AzdU'
-	WHEN
-	 dcode.value = '08180007'
-	THEN 'ddI'
-	WHEN
-	 dcode.value = '08180013'
-	THEN 'NVP'
-	WHEN
-	 dcode.value = '08180018'
-	THEN 'Atevirdine mesylate U-87201E'
-	WHEN
-	dcode.value = '08180020'
-	THEN 'ddC / HIVID'
-	WHEN
-	 dcode.value = '08180021'
-	THEN 'AZT / ZDV'
-	WHEN
-	 dcode.value = '08180024'
-	THEN 'd4T'
-	WHEN
-	 dcode.value = '08180025'
-	THEN 'Alovudine'
-	WHEN
-	 dcode.value = '08180026'
-	THEN '3TC'
-	WHEN
-	 dcode.value = '08180030'
-	THEN 'SQV'
-	WHEN
-	 dcode.value = '08180031'
-	THEN 'DLV'
-	WHEN
-	 dcode.value = '08180032'
-	THEN 'CD4/RST4'
-	WHEN
-	 dcode.value = '08180043'
-	THEN 'IDV'
-	WHEN
-	 dcode.value = '08180048'
-	THEN 'Loviride / Lotrene'
-	WHEN
-	 dcode.value = '08180406'
-	THEN 'ADV'
-	WHEN
-	 dcode.value = '08180407'
-	THEN 'ABC'
-	WHEN
-	 dcode.value = '08180411'
-	THEN 'Fluorouridine'
-	WHEN
-	 dcode.value = '08180412'
-	THEN 'Combivir'
-	WHEN
-	 dcode.value = '08180414'
-	THEN 'DAPD'
-	WHEN
-	 dcode.value = '08180415'
-	THEN 'FTC'
-	WHEN
-	 dcode.value = '08180418'
-	THEN '(3TC/ZDV) / ABC'
-	WHEN
-	 dcode.value = '08180420'
-	THEN 'Epzicom'
-	WHEN
-	 dcode.value = '08180421'
-	THEN 'TDF/FTC'
-	WHEN
-	 dcode.value = '08180422'
-	THEN 'EFV/FTC/TDF'
-	WHEN
-	 dcode.value = '08180804'
-	THEN 'EFV'
-	WHEN
-	 dcode.value = '08180809'
-	THEN 'ETR'
-	WHEN
-	 dcode.value = '08180811'
-	THEN 'Rilpivirine / TMC278'
-	WHEN
-	 dcode.value = ' 08180813'
-	THEN 'Elvitegravir / GS9137'
-	WHEN
-	 dcode.value = '08180814'
-	THEN 'RAL'
-	WHEN
-	 dcode.value = '08180825'
-	THEN 'Complera'
-	WHEN
-	 dcode.value = '08181203'
-	THEN 'RTV'
-	WHEN
-	 dcode.value = '08181204'
-	THEN 'NFV'
-	WHEN
-	 dcode.value = '08181205'
-	THEN 'APV'
-	WHEN
-	 dcode.value = '08181208'
-	THEN 'LPV / RTV'
-	WHEN
-	 dcode.value = '08181209'
-	THEN 'FTV'
-	WHEN
-	 dcode.value = '08181210'
-	THEN 'Tipranivir'
-	WHEN
-	 dcode.value = '08181214'
-	THEN 'ATV'
-	WHEN
-	 dcode.value = '08181218'
-	THEN 'Lexiva / GW433908 / Fosamprenavir'
-	WHEN
-	 dcode.value = '08181220'
-	THEN 'DRV'
-	WHEN
-	 dcode.value = '08182002'
-	THEN 'TDF'
-	WHEN
-	 dcode.value = '08182403'
-	THEN 'MVC'
-	WHEN
-	 dcode.value = '08188804'
-	THEN 'ENF'
-	WHEN
-	 dcode.value = '10040005'
-	THEN 'Hydroxyurea / Hydrea'
-	WHEN
-	 dcode.value = '10920013'
-	THEN 'Interleukin-2 / IL-2'
-	WHEN
-	 dcode.value = '80120055'
-	THEN 'Remune cyclosporin A'
-	WHEN
-	 dcode.value = '99999998'
-	THEN 'Blinded Study Drug'
-	WHEN
-	 dcode.value = '99999999'
-	THEN 'Drug Code Pending'
-	ELSE 'Unknown Drug'
-	END as drug_code  --,  d4a.value as cd4_absolute, d8p.value as cd8_percent, d8a.value as cd8_absolute, r.value as ratio
+  WHEN
+   dcode.value = '08180006'
+  THEN 'AzdU'
+  WHEN
+   dcode.value = '08180007'
+  THEN 'ddI'
+  WHEN
+   dcode.value = '08180013'
+  THEN 'NVP'
+  WHEN
+   dcode.value = '08180018'
+  THEN 'Atevirdine mesylate U-87201E'
+  WHEN
+  dcode.value = '08180020'
+  THEN 'ddC / HIVID'
+  WHEN
+   dcode.value = '08180021'
+  THEN 'AZT / ZDV'
+  WHEN
+   dcode.value = '08180024'
+  THEN 'd4T'
+  WHEN
+   dcode.value = '08180025'
+  THEN 'Alovudine'
+  WHEN
+   dcode.value = '08180026'
+  THEN '3TC'
+  WHEN
+   dcode.value = '08180030'
+  THEN 'SQV'
+  WHEN
+   dcode.value = '08180031'
+  THEN 'DLV'
+  WHEN
+   dcode.value = '08180032'
+  THEN 'CD4/RST4'
+  WHEN
+   dcode.value = '08180043'
+  THEN 'IDV'
+  WHEN
+   dcode.value = '08180048'
+  THEN 'Loviride / Lotrene'
+  WHEN
+   dcode.value = '08180406'
+  THEN 'ADV'
+  WHEN
+   dcode.value = '08180407'
+  THEN 'ABC'
+  WHEN
+   dcode.value = '08180411'
+  THEN 'Fluorouridine'
+  WHEN
+   dcode.value = '08180412'
+  THEN 'Combivir'
+  WHEN
+   dcode.value = '08180414'
+  THEN 'DAPD'
+  WHEN
+   dcode.value = '08180415'
+  THEN 'FTC'
+  WHEN
+   dcode.value = '08180418'
+  THEN '(3TC/ZDV) / ABC'
+  WHEN
+   dcode.value = '08180420'
+  THEN 'Epzicom'
+  WHEN
+   dcode.value = '08180421'
+  THEN 'TDF/FTC'
+  WHEN
+   dcode.value = '08180422'
+  THEN 'EFV/FTC/TDF'
+  WHEN
+   dcode.value = '08180804'
+  THEN 'EFV'
+  WHEN
+   dcode.value = '08180809'
+  THEN 'ETR'
+  WHEN
+   dcode.value = '08180811'
+  THEN 'Rilpivirine / TMC278'
+  WHEN
+   dcode.value = ' 08180813'
+  THEN 'Elvitegravir / GS9137'
+  WHEN
+   dcode.value = '08180814'
+  THEN 'RAL'
+  WHEN
+   dcode.value = '08180825'
+  THEN 'Complera'
+  WHEN
+   dcode.value = '08181203'
+  THEN 'RTV'
+  WHEN
+   dcode.value = '08181204'
+  THEN 'NFV'
+  WHEN
+   dcode.value = '08181205'
+  THEN 'APV'
+  WHEN
+   dcode.value = '08181208'
+  THEN 'LPV / RTV'
+  WHEN
+   dcode.value = '08181209'
+  THEN 'FTV'
+  WHEN
+   dcode.value = '08181210'
+  THEN 'Tipranivir'
+  WHEN
+   dcode.value = '08181214'
+  THEN 'ATV'
+  WHEN
+   dcode.value = '08181218'
+  THEN 'Lexiva / GW433908 / Fosamprenavir'
+  WHEN
+   dcode.value = '08181220'
+  THEN 'DRV'
+  WHEN
+   dcode.value = '08182002'
+  THEN 'TDF'
+  WHEN
+   dcode.value = '08182403'
+  THEN 'MVC'
+  WHEN
+   dcode.value = '08188804'
+  THEN 'ENF'
+  WHEN
+   dcode.value = '10040005'
+  THEN 'Hydroxyurea / Hydrea'
+  WHEN
+   dcode.value = '10920013'
+  THEN 'Interleukin-2 / IL-2'
+  WHEN
+   dcode.value = '80120055'
+  THEN 'Remune cyclosporin A'
+  WHEN
+   dcode.value = '99999998'
+  THEN 'Blinded Study Drug'
+  WHEN
+   dcode.value = '99999999'
+  THEN 'Drug Code Pending'
+  ELSE 'Unknown Drug'
+  END as drug_code  --,  d4a.value as cd4_absolute, d8p.value as cd8_percent, d8a.value as cd8_absolute, r.value as ratio
     from entity as e
     join schema as s on e.schema_id = s.id
     join datetime as dstart on e.id = dstart.entity_id and dstart.attribute_id in (
@@ -252,17 +253,18 @@ drugs as (
     join context as c on e.id = c.entity_id and external = 'patient'
     join patient as p on c.key = p.id
     where s.name = 'ARVMeds'
-    group by p.id, p.our, dstart.value, dcode.value
+    group by p.id, p.our, p.legacy_number, dstart.value, dcode.value
     order by p.id
 ),
 
 
 aliquot as (
 select p.id as pid,
-    p.our as our,
-    s.collect_date as collect_date,
+    p.our as our
+    ,p.legacy_number as aeh_number
+    ,s.collect_date as collect_date
 
-    (SELECT COUNT(*)
+    ,(SELECT COUNT(*)
        from aliquot as a
          join specimen as sp on a.specimen_id = sp.id
          join aliquotstate as aqs on aqs.id = a.state_id
@@ -383,12 +385,13 @@ select p.id as pid,
         ) AS lymph_count
     from specimen as s
     join patient as p on p.id = s.patient_id
-    group by p.id, p.our, s.collect_date
+    group by p.id, p.our, p.legacy_number, s.collect_date
 ),
 
 cd4_rna as (
 select coalesce(vl.pid, l.pid) as pid
     ,coalesce(vl.our, l.our) as our
+    ,coalesce(vl.aeh_number, l.aeh_number) as aeh_number
     ,coalesce(vl.collect_date, l.collect_date, NULL) as collect_date
     ,vl.quantifier_code
     ,vl.result
@@ -407,6 +410,7 @@ cd4_rna_drug as (
 select
     cr.pid as pid
     ,cr.our as our
+    ,cr.aeh_number as aeh_number
     ,cr.collect_date as collect_date
     ,cr.quantifier_code as quantifier_code
     ,cr.result as rna_result
@@ -421,12 +425,13 @@ select
 from cd4_rna as cr
 left join drugs as d on cr.pid = d.pid and cr.collect_date >= d.start_date and (d.stop_date is NULL or cr.collect_date <= d.stop_date)
 --where coalesce(cr.collect_date, d.collect_date, NULL) is not NULL
-group by cr.pid, cr.our, cr.collect_date, quantifier_code, rna_result, rna_test_kit_type, cd4_percent, cd4_absolute, cd8_percent, cd8_absolute, cd4_cd8_ratio
+group by cr.pid, cr.our, cr.aeh_number, cr.collect_date, quantifier_code, rna_result, rna_test_kit_type, cd4_percent, cd4_absolute, cd8_percent, cd8_absolute, cd4_cd8_ratio
 order by cr.our, cr.collect_date
 )
 
 select
     coalesce(cr.our, a.our) as our
+    ,coalesce(cr.aeh_number, a.aeh_number) as aeh_number
     ,coalesce(cr.collect_date, a.collect_date) as collect_date
     ,cr.quantifier_code as quantifier_code
     ,cr.rna_result as rna_result
@@ -436,7 +441,7 @@ select
        ,cr.cd8_percent as cd8_percent
        ,cr.cd8_absolute as cd8_absolute
        ,cr.cd4_cd8_ratio as cd4_cd8_ratio
-	,cr.drug_code as drug_code
+  ,cr.drug_code as drug_code
        ,a.pbmc_count
        ,a.plasma_count
        ,a.csf_count
