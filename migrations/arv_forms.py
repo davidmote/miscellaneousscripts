@@ -60,7 +60,7 @@ def buildMergedSchema(Session, BBLSession):
         type='string',
         order=order,
         is_collection=False,
-        is_required=False,
+        is_required=True,
         )
     drugs = mergeDrugs(Session, BBLSession)
     for i, (drug_key, drug_value) in enumerate(sorted(drugs.items(), key=lambda t: t[0])):
@@ -81,10 +81,14 @@ def buildMergedSchema(Session, BBLSession):
         type='string',
         order=order,
         is_collection=False,
-        is_required=False,
+        is_required=True,
         )
 
-    for i, (name, title, value) in enumerate([('treatment', 'Treatment', 'treatment'),('pep', 'Post Exposure Prophylaxis', 'pep'),('prep', 'Pre Exposure Prophylaxis', 'prep')]):
+    for i, (name, title, value) in enumerate([
+        ('treatment', 'Treatment', 'treatment'),
+        ('pep', 'Post Exposure Prophylaxis', 'pep'),
+        ('prep', 'Pre Exposure Prophylaxis', 'prep'),
+        ('other','Other','other')]):
         newChoice = model.Choice(
             name = name,
             title = unicode(title),
@@ -102,7 +106,7 @@ def buildMergedSchema(Session, BBLSession):
         type='date',
         order=order,
         is_collection=False,
-        is_required=False,
+        is_required=True,
         )
     order += 1
 
@@ -123,19 +127,19 @@ def buildMergedSchema(Session, BBLSession):
         name='stop_reason',
         title='Reason for stopping the medication',
         description="Please select the reason the medication was ended from the list (e.g. Adverse event)",
-        type='string',
+        type='integer',
         order=order,
         is_collection=False,
         is_required=False,
         )
 
-    events = gatherBBlStopReasons(BBLSession)
-    for i, (event) in enumerate(events):
+    events = gatherBBlStopReasons()
+    for i, (code, event) in enumerate(events):
         newChoice = model.Choice(
-            name = event,
+            name = code,
             title = unicode(event),
             order = i,
-            value = unicode(event)
+            value = unicode(code)
             )
         adverse_event.choices.append(newChoice)
 
@@ -377,11 +381,100 @@ select
     ELSE
     NULL
     END as stop_date
-    ,CASE
-     when e.ehpsm > 11
-     then l.eharv1t
-     else NULL
-     END as stop_reason
+   ,CASE
+    when e.ehpsm = 63
+    then 200
+    when e.ehpsm = 35
+    then 205
+    when e.ehpsm = 36
+    then 210
+    when e.ehpsm = 80
+    then 981
+    when e.ehpsm = 37
+    then 219
+    when e.ehpsm = 12
+    then 199
+    when e.ehpsm = 997
+    then 997
+    when e.ehpsm = 38
+    then 227
+    when e.ehpsm = 62
+    then 421
+    when e.ehpsm = 39
+    then 239
+    when e.ehpsm = 40
+    then 240
+    when e.ehpsm = 41
+    then 247
+    when e.ehpsm = 42
+    then 751
+    when e.ehpsm = 43
+    then 406
+    when e.ehpsm = 44
+    then 410
+    when e.ehpsm = 45
+    then 422
+    when e.ehpsm = 46
+    then 428
+    when e.ehpsm = 86
+    then 440
+    when e.ehpsm = 85
+    then 444
+    when e.ehpsm = 47
+    then 465
+    when e.ehpsm = 48
+    then 466
+    when e.ehpsm = 87
+    then 262
+    when e.ehpsm = 71
+    then 787
+    when e.ehpsm = 49
+    then 270
+    when e.ehpsm = 50
+    then 271
+    when e.ehpsm = 51
+    then 273
+    when e.ehpsm = 52
+    then 277
+    when e.ehpsm = 53
+    then 450
+    when e.ehpsm = 91
+    then 983
+    when e.ehpsm = 93
+    then 985
+    when e.ehpsm = 92
+    then 984
+    when e.ehpsm = 99
+    then 999
+    when e.ehpsm = 64
+    then 999
+    when e.ehpsm = 54
+    then 286
+    when e.ehpsm = 55
+    then 290
+    when e.ehpsm = 66
+    then 621
+    when e.ehpsm = 33
+    then 294
+    when e.ehpsm = 57
+    then 295
+    when e.ehpsm = 58
+    then 274
+    when e.ehpsm = 65
+    then 622
+    when e.ehpsm = 81
+    then 982
+    when e.ehpsm = 59
+    then 491
+    when e.ehpsm = 88
+    then 970
+    when e.ehpsm = 68
+    then 854
+    when e.ehpsm = 60
+    then 321
+    when e.ehpsm = 67
+    then 323
+    END as stop_reason
     ,CASE
      WHEN e.arvtxstat in (3,4)
      THEN 'treatment'
@@ -400,6 +493,10 @@ select
     when e.eharvtg = 4
     then 4
     end as adverse_event_grade
+    ,CASE
+    WHEN  e.eharvmr != '-4'
+    then e.eharvmr
+    end as notes
 from aeh_eharv01 e
 join aeh_roster r on r.rid = e.rid
 left join aeh_eharvl1 l on l.eharv1i = e.ehpsm
@@ -497,11 +594,107 @@ select
     ELSE
     NULL
     END as stop_date
+
+--    ,CASE
+--     when e.ehpsm > 11
+--     then l.eharv1t
+--     else NULL
+--     END as stop_reason
     ,CASE
-     when e.ehpsm > 11
-     then l.eharv1t
-     else NULL
-     END as stop_reason
+    when e.ehpsm = 63
+    then 200
+    when e.ehpsm = 35
+    then 205
+    when e.ehpsm = 36
+    then 210
+    when e.ehpsm = 80
+    then 981
+    when e.ehpsm = 37
+    then 219
+    when e.ehpsm = 12
+    then 199
+    when e.ehpsm = 997
+    then 997
+    when e.ehpsm = 38
+    then 227
+    when e.ehpsm = 62
+    then 421
+    when e.ehpsm = 39
+    then 239
+    when e.ehpsm = 40
+    then 240
+    when e.ehpsm = 41
+    then 247
+    when e.ehpsm = 42
+    then 751
+    when e.ehpsm = 43
+    then 406
+    when e.ehpsm = 44
+    then 410
+    when e.ehpsm = 45
+    then 422
+    when e.ehpsm = 46
+    then 428
+    when e.ehpsm = 86
+    then 440
+    when e.ehpsm = 85
+    then 444
+    when e.ehpsm = 47
+    then 465
+    when e.ehpsm = 48
+    then 466
+    when e.ehpsm = 87
+    then 262
+    when e.ehpsm = 71
+    then 787
+    when e.ehpsm = 49
+    then 270
+    when e.ehpsm = 50
+    then 271
+    when e.ehpsm = 51
+    then 273
+    when e.ehpsm = 52
+    then 277
+    when e.ehpsm = 53
+    then 450
+    when e.ehpsm = 91
+    then 983
+    when e.ehpsm = 93
+    then 985
+    when e.ehpsm = 92
+    then 984
+    when e.ehpsm = 99
+    then 999
+    when e.ehpsm = 64
+    then 999
+    when e.ehpsm = 54
+    then 286
+    when e.ehpsm = 55
+    then 290
+    when e.ehpsm = 66
+    then 621
+    when e.ehpsm = 33
+    then 294
+    when e.ehpsm = 57
+    then 295
+    when e.ehpsm = 58
+    then 274
+    when e.ehpsm = 65
+    then 622
+    when e.ehpsm = 81
+    then 982
+    when e.ehpsm = 59
+    then 491
+    when e.ehpsm = 88
+    then 970
+    when e.ehpsm = 68
+    then 854
+    when e.ehpsm = 60
+    then 321
+    when e.ehpsm = 67
+    then 323
+    END as stop_reason
+
      ,CASE
      WHEN e.arvtxstat in (3,4)
      THEN 'treatment'
@@ -520,6 +713,10 @@ select
     when e.eharvtg = 4
     then 4
     end as adverse_event_grade
+    ,CASE
+    WHEN  e.eharvmr != '-4'
+    then e.eharvmr
+    end as notes
 from aehpart_eharv01 e
 join aehpart_roster r on r.rid = e.rid
 left join aeh_eharvl1 l on l.eharv1i = e.ehpsm
@@ -537,8 +734,9 @@ select * from AEHPART
 )
 
 select * from all_drugs
-group by aeh_number, visit_date, start_date, stop_date, drug, start_reason, stop_reason, adverse_event_grade
+group by aeh_number, visit_date, start_date, stop_date, drug, start_reason, stop_reason, adverse_event_grade, notes
 order by aeh_number, visit_date;
+
     """)
     keys = [
     'aeh_number',
@@ -547,8 +745,9 @@ order by aeh_number, visit_date;
     'start_date',
     'stop_date',
     'stop_reason',
-    'start_reason'
-    'adverse_event_grade']
+    'start_reason',
+    'adverse_event_grade',
+    'notes']
     for entry in results:
         yield dict(zip(keys, entry))
 
@@ -571,14 +770,66 @@ order by code
     """)
     return dict([r for r in results])
 
-def gatherBBlStopReasons(Session):
-    results = Session.execute("""
-select eharv1t from aeh_eharvl1
-where eharv1i > 11
-order by eharv1i asc
-    """)
-    for result in results:
-        yield result[0]
+# def gatherBBlStopReasons(Session):
+#     results = Session.execute("""
+# select eharv1t from aeh_eharvl1
+# where eharv1i > 11
+# order by eharv1i asc
+#     """)
+#     for result in results:
+#         yield result[0]
+
+def gatherBBlStopReasons():
+
+    results = [
+        (200, 'Abdominal pain'),
+        (406, 'Amylase, increased'),
+        (205, 'Anemia'),
+        (410, 'Bilirubin, total, increased'),
+        (210, 'Bleeding'),
+        (981, 'Clinician decision'),
+        (219, 'CNS related symptoms'),
+        (199, 'Completed Treatment'),
+        (422, 'Creatinine, serum, increased'),
+        (997, 'Death'),
+        (227, 'Diarrhea'),
+        (421, 'Elevated CPK (creatinine phosphokinase)'),
+        (239, 'Fatigue'),
+        (240, 'Fever'),
+        (428, 'Glucose, increased'),
+        (247, 'Headache'),
+        (751, 'Hepatotoxicity'),
+        (440, 'Lactate level, increased'),
+        (444, 'Lipase, increased'),
+        (465, 'Triglycerides, increased'),
+        (466, 'Uric acid, increased'),
+        (262, 'Lactic acidosis'),
+        (787, 'Dyslipidemia'),
+        (270, 'Myalgia'),
+        (271, 'Myositis'),
+        (273, 'Nausea'),
+        (277, 'Neuropsych / Mood'),
+        (450, 'Neutropenia'),
+        (983, 'Non-compliance with clinic visits'),
+        (985, 'Non-compliance with clinic visits & study treatment'),
+        (984, 'Non-compliance with study treatment'),
+        (999, 'Other (specify)'),
+        (286, 'Pancreatitis'),
+        (290, 'Peripheral Neuropathy'),
+        (621, 'Pregnancy'),
+        (294, 'Rash/allergic reaction'),
+        (295, 'Renal Colic'),
+        (274, 'Nephrolithiasis (Kidney stones)'),
+        (622, 'Receives prohibited medication'),
+        (982, 'Subject/guardian decision'),
+        (491, 'Thrombocytopenia'),
+        (970, 'Toxicity decreased/resolved'),
+        (854, 'Virologic failure'),
+        (321, 'Vomiting'),
+        (323, 'Weight change'),
+    ]
+    return results
+
 
 def mergeDrugs(Session, BBLSession):
     bbldrugs = gatherBBLDrugList(BBLSession)

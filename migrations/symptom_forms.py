@@ -133,6 +133,59 @@ def buildSchema(Session):
     Session.flush()
     return newSchema
 
+
+def getSymptomList(Session):
+
+9;"Arthralgia"
+12;899;"Other"
+1; 812;"Headache"
+2;"Pharyngitis"
+3; 748;"Skin rash"
+4;"Myalgia"
+5; 803;"Fatigue"
+6; 813;"Fever"
+7; 806; "Night sweats"
+8; 741 ;"General gastrointestinal symptoms (nausea, vomiting or diarrhea)"
+11; 701;"Lymphadenopathy"
+10; 800; "Weight loss (greater than 5 lbs/2.5 kg)"
+
+"
+"Bell's Palsy"
+
+"oral thrush"
+"odynophagia"
+"pain with defecation"
+"bleeding with defecation"
+"nausea"
+"septra rash"
+"emesis"
+
+"diarrhea"
+
+"bloating"
+"diarrhea"
+"bloating"
+"diarrhea"
+"malaise"
+"depression"
+
+"esophageal ulcers"
+
+"mouth sores"
+
+"photophobia"
+"nucchal rigidity"
+
+"oral ulcerations"
+"oral ulcerations"
+
+"oral ulcerations"
+
+"rectal discharge"
+
+
+
+
 def fillModern(Session, symptomSchema):
     for symptom in Session.query(symptommodel.Symptom):
         kwargs = {}
@@ -171,7 +224,6 @@ def fillModern(Session, symptomSchema):
                 visit.entities.add(newEntity)
                 patient.entities.add(newEntity)
         else:
-            formstate =  u'complete'
             formTitle = "-".join([symptomSchema.name, datetime.now().isoformat(), str(i)])
             newEntity = model.Entity(schema=symptomSchema, name=formTitle, title=symptomSchema.name, state=formstate, collect_date=collect_date)
             for key, value in kwargs.iteritems():
